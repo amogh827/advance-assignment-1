@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Application</title>
+    <style>
+      /* Reset default margin and padding */
+      body,
+      h1,
+      h2,
+      h3,
+      p,
+      ul,
+      li {
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Basic styling */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+      }
+
+      .chat-container {
+        max-width: 600px;
+        margin: 50px auto;
+        background-color: #ffffff;
+        border: 1px solid #ccc;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .chat-header {
+        background-color: #075e54;
+        color: #ffffff;
+        padding: 10px;
+        text-align: center;
+        font-size: 18px;
+      }
+
+      .chat-messages {
+        padding: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .message {
+        padding: 10px;
+        margin: 10px;
+        border-radius: 5px;
+      }
+
+      .incoming {
+        background-color: #e1ffc7;
+      }
+
+      .outgoing {
+        background-color: #dcf8c6;
+        align-self: flex-end;
+      }
+
+      .chat-input {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border-top: 1px solid #ccc;
+      }
+
+      .chat-input input {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 5px;
+      }
+
+      .chat-input button {
+        padding: 8px 15px;
+        background-color: #075e54;
+        color: #ffffff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .chat-container {
+          margin: 20px;
+        }
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+      }
+      /* Styles for the close button */
+      .close-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div class="chat-header">WhatsApp Chat</div>
+      <div class="chat-messages" id="chat-msg"></div>
+      <div class="chat-input">
+        <input type="text" placeholder="Type your message..." id="chatInput" />
+        <button id="sendButton">Send</button>
+      </div>
+    </div>
+
+    <div id="myModal" class="modal">
+      <div class="modal-content">
+        <span class="close-button" id="closeModal">&times;</span>
+        <p>Available Commands</p>
+        <p>/help - shows this window</p>
+        <p>/random - print a random number</p>
+        <p>/clear the chat</p>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const closeModalButton = document.getElementById("closeModal");
+      const modal = document.getElementById("myModal");
+
+      closeModalButton.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+
+      const socket = io.connect("http://localhost:3000");
+
+      const emojiMap = {
+        react: "📖", //could not find the emoji
+        woah: "😮",
+        hey: "✋", //could not find the emoji
+        lol: "😂",
+        like: "🤍",
+        congratulations: "🎉",
+      };
+
+      document.getElementById("sendButton").addEventListener("click", () => {
+        const messageEle = document.getElementById("chatInput");
+        let message = messageEle.value;
+        if (message === "/help") {
+          modal.style.display = "block";
+        } else if (message === "/random") {
+          message = `Here's your random number ${Math.random()}`;
+        } else if (message === "/clear") {
+          const parentElement = document.getElementById("chat-msg");
+          const children = parentElement.querySelectorAll("*"); // Selects all children
+
+          children.forEach((child) => {
+            child.remove(); // Remove each child element
+          });
+        }
+        for (const txt of Object.keys(emojiMap)) {
+          message = message.replace(txt, emojiMap[txt]);
+        }
+        messageEle.value = "";
+        if (message !== "/clear") {
+          socket.emit("chat message", message);
+        }
+      });
+      socket.on("chat message", (msg) => {
+        const messageDiv = document.querySelector(".chat-messages");
+        const newMessageDiv = document.createElement("div");
+        newMessageDiv.className = "message incoming";
+        newMessageDiv.textContent = msg;
+        messageDiv.appendChild(newMessageDiv);
+      });
+    </script>
+  </body>
+</html>
